@@ -5,124 +5,159 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.ghzawi.proxystoreagent.R
 
-// Inter Font Family - with fallback to system default
-// Note: Download Inter fonts from https://fonts.google.com/specimen/Inter
-// Place .ttf files in res/font/ directory named:
-// - inter_regular.ttf, inter_medium.ttf, inter_semibold.ttf, inter_bold.ttf
-val InterFontFamily = try {
-    FontFamily(
-        Font(R.font.inter_regular, FontWeight.Normal),
-        Font(R.font.inter_medium, FontWeight.Medium),
-        Font(R.font.inter_semibold, FontWeight.SemiBold),
-        Font(R.font.inter_bold, FontWeight.Bold)
-    )
-} catch (e: Exception) {
-    FontFamily.Default // Fallback to system default if Inter fonts not found
-}
+/**
+ * ProxyStore Brutal Typography System
+ * 
+ * MONOSPACE SUPREMACY - Technical, command-line aesthetic
+ * - All text uses monospace fonts (JetBrains Mono preferred, Roboto Mono fallback)
+ * - Uppercase preferred for headers/labels
+ * - High contrast, technical precision
+ * 
+ * Note: Download JetBrains Mono fonts from https://www.jetbrains.com/lp/mono/
+ * Place .ttf files in res/font/ directory named:
+ * - jetbrains_mono_regular.ttf
+ * - jetbrains_mono_bold.ttf
+ * - jetbrains_mono_black.ttf
+ * 
+ * Fallback: System monospace (Roboto Mono on Android)
+ */
 
-// ProxyStore Typography System
+// Use system monospace as fallback (JetBrains Mono fonts not yet installed)
+// TODO: Add JetBrains Mono font files - see FONTS.md
+val JetBrainsMonoFontFamily = FontFamily.Monospace
+
+// ProxyStore Brutal Typography
 val Typography = Typography(
-    // Display - Large Headers (28sp, Bold)
+    // Display Large - UPPERCASE headers, massive stats (28sp, Black weight)
     displayLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Black,
         fontSize = 28.sp,
         lineHeight = 36.sp,
-        letterSpacing = 0.sp,
+        letterSpacing = 0.1.sp,  // Wider tracking for uppercase
         color = TextPrimary
     ),
-
-    // H1 - Main Headings (24sp, Bold)
+    
+    // Headline Large - Major headings (24sp, Black)
     headlineLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Black,
         fontSize = 24.sp,
         lineHeight = 32.sp,
-        letterSpacing = 0.sp,
+        letterSpacing = 0.08.sp,
         color = TextPrimary
     ),
 
-    // H2 - Section Headings (20sp, SemiBold)
+    // Headline Medium - Screen headers with ">" prefix (18sp, Black, UPPERCASE)
     headlineMedium = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 20.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp,
-        color = TextPrimary
-    ),
-
-    // H3 - Card Titles (18sp, SemiBold)
-    headlineSmall = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Black,
         fontSize = 18.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.sp,
+        letterSpacing = 0.08.sp,
+        color = TerminalAmber  // Terminal amber for headers
+    ),
+    
+    // Headline Small - Card headers (16sp, Black)
+    headlineSmall = TextStyle(
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Black,
+        fontSize = 16.sp,
+        lineHeight = 22.sp,
+        letterSpacing = 0.06.sp,
         color = TextPrimary
     ),
 
-    // Title - Emphasized Text (16sp, SemiBold)
-    titleLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
+    // Body Large - Main body text (16sp, Normal)
+    bodyLarge = TextStyle(
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.sp,
         color = TextPrimary
     ),
 
-    // Body - Regular Text (14sp, Regular)
-    bodyLarge = TextStyle(
-        fontFamily = InterFontFamily,
+    // Body Medium - Standard text (14sp, Normal)
+    bodyMedium = TextStyle(
+        fontFamily = JetBrainsMonoFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.sp,
-        color = TextSecondary
+        color = TextPrimary
     ),
-
-    // Body Medium (14sp, Medium)
-    bodyMedium = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
+    
+    // Body Small - Helper text, comments with "//" (12sp, Normal)
+    bodySmall = TextStyle(
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
         letterSpacing = 0.sp,
         color = TextSecondary
     ),
 
-    // Button Text (15sp, SemiBold)
+    // Label Large - Button text in [BRACKETS] (14sp, Black, UPPERCASE)
     labelLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 15.sp,
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Black,
+        fontSize = 14.sp,
         lineHeight = 20.sp,
+        letterSpacing = 0.1.sp,
+        color = TextPrimary
+    ),
+    
+    // Label Medium - Form labels (12sp, Black, UPPERCASE)
+    labelMedium = TextStyle(
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Black,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.1.sp,
+        color = TextTertiary
+    ),
+    
+    // Label Small - Tiny labels, status text (11sp, Bold, UPPERCASE)
+    labelSmall = TextStyle(
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.08.sp,
+        color = TextTertiary
+    ),
+
+    // Title Large - Large values/stats (32sp, Bold)
+    titleLarge = TextStyle(
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
+        letterSpacing = 0.sp,
+        color = TerminalAmber  // Use accent colors for important values
+    ),
+    
+    // Title Medium - Medium stats (20sp, Bold)
+    titleMedium = TextStyle(
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp,
+        lineHeight = 28.sp,
         letterSpacing = 0.sp,
         color = TextPrimary
     ),
-
-    // Caption/Label (12sp, Medium, Uppercase)
-    labelMedium = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.05.em,
-        color = TextTertiary
-    ),
-
-    // Small Caption (11sp, Medium)
-    labelSmall = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 14.sp,
-        letterSpacing = 0.05.em,
-        color = TextTertiary
+    
+    // Title Small - Small stats (16sp, Bold)
+    titleSmall = TextStyle(
+        fontFamily = JetBrainsMonoFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.sp,
+        color = TextPrimary
     )
 )

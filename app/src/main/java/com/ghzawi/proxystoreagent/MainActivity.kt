@@ -13,25 +13,21 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Power
-import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -42,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ghzawi.proxystoreagent.ui.ProxyViewModel
+import com.ghzawi.proxystoreagent.ui.components.*
 import com.ghzawi.proxystoreagent.ui.theme.*
 
 class MainActivity : ComponentActivity() {
@@ -103,456 +100,357 @@ fun ProxyAgentScreen(viewModel: ProxyViewModel) {
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = BackgroundDark
+        color = BackgroundVoid  // Deep black background
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp)
                 .statusBarsPadding()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(48.dp))
+            // Brutal Screen Header with ASCII decoration
+            BrutalScreenHeader(
+                title = "PROXYSTORE_AGENT",
+                trailingContent = if (isOnline) {
+                    { BrutalStatusIndicator(status = "ONLINE", color = TerminalGreen) }
+                } else null
+            )
 
-            // App Header with Icon
-            AppHeader()
+            Column(
+                modifier = Modifier.padding(ProxySpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(ProxySpacing.lg)
+            ) {
+                // ASCII Logo Box
+                AsciiLogoBox()
 
-            Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(ProxySpacing.md))
 
-            // Token Input Section
-            TokenInputSection(
-                token = token,
-                onTokenChange = { newToken ->
-                    if (newToken.length <= 6) {
-                        token = newToken.uppercase()
+                if (!isOnline) {
+                    // Token Input Section (when not connected)
+                    TokenInputSection(
+                        token = token,
+                        onTokenChange = { newToken ->
+                            if (newToken.length <= 6) {
+                                token = newToken.uppercase()
+                            }
+                        },
+                        enabled = !isOnline
+                    )
+
+                    Spacer(modifier = Modifier.height(ProxySpacing.sm))
+
+                    // Helper comment
+                    BrutalComment("Get pairing token from dashboard")
+
+                    Spacer(modifier = Modifier.height(ProxySpacing.lg))
+
+                    // Connect Button
+                    BrutalButton(
+                        text = if (isConnecting) "CONNECTING..." else "CONNECT",
+                        onClick = {
+                            if (!isConnecting && token.length == 6) {
+                                viewModel.connect(token)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = token.length == 6 && !isConnecting,
+                        borderColor = TerminalAmber,
+                        icon = if (isConnecting) null else Icons.Default.Power
+                    )
+
+                    if (isConnecting) {
+                        Spacer(modifier = Modifier.height(ProxySpacing.md))
+                        ConnectionInfoCard()
                     }
-                },
-                enabled = !isOnline
-            )
+                } else {
+                    // Dashboard when connected
+                    credentials?.let { creds ->
+                        // Device Credentials Card
+                        CredentialsCard(
+                            context = context,
+                            credentials = creds
+                        )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(ProxySpacing.md))
 
-            // Status Indicator
-            StatusIndicator(
-                isOnline = isOnline,
-                isConnecting = isConnecting
-            )
+                        // Activity Stats Card
+                        ProxyActivityCard(
+                            activeConnections = viewModel.activeConnections,
+                            totalBytes = viewModel.totalBytesTransferred
+                        )
 
-            Spacer(modifier = Modifier.height(32.dp))
+                        Spacer(modifier = Modifier.height(ProxySpacing.lg))
 
-            // Connect/Disconnect Button
-            ConnectButton(
-                isOnline = isOnline,
-                isConnecting = isConnecting,
-                enabled = (token.length == 6 && !isConnecting) || isOnline,
-                onClick = {
-                    if (isOnline) {
-                        viewModel.disconnect()
-                    } else {
-                        viewModel.connect(token)
+                        // Disconnect Button
+                        BrutalButton(
+                            text = "DISCONNECT",
+                            onClick = { viewModel.disconnect() },
+                            modifier = Modifier.fillMaxWidth(),
+                            borderColor = TerminalRed,
+                            icon = Icons.Default.Close
+                        )
+
+                        Spacer(modifier = Modifier.height(ProxySpacing.sm))
+
+                        // Offboard Button
+                        BrutalOutlinedButton(
+                            text = "OFFBOARD_DEVICE",
+                            onClick = {
+                                viewModel.offboard()
+                                token = ""
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            borderColor = TerminalRed
+                        )
                     }
                 }
-            )
-
-            // Connection Info (while connecting)
-            if (isConnecting) {
-                Spacer(modifier = Modifier.height(24.dp))
-                ConnectionInfoCard()
             }
-
-            // Device Credentials (when online)
-            if (isOnline && credentials != null) {
-                Spacer(modifier = Modifier.height(32.dp))
-
-                CredentialsCard(
-                    context = context,
-                    credentials = credentials
-                )
-
-                // Activity Stats
-                Spacer(modifier = Modifier.height(16.dp))
-                ProxyActivityCard(
-                    activeConnections = viewModel.activeConnections,
-                    totalBytes = viewModel.totalBytesTransferred
-                )
-
-                // Offboard Button
-                Spacer(modifier = Modifier.height(16.dp))
-                OffboardButton(
-                    onClick = {
-                        viewModel.offboard()
-                        token = ""
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
 
+/**
+ * ASCII Logo Box - Terminal-style branded header
+ */
 @Composable
-fun AppHeader() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+fun AsciiLogoBox() {
+    BrutalCard(
+        modifier = Modifier.fillMaxWidth(),
+        accentColor = TerminalAmber
     ) {
-        // App Icon with glassmorphism background
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .background(
-                    color = Primary.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .clip(RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(ProxySpacing.sm)
         ) {
-            Icon(
-                imageVector = Icons.Default.Security,
-                contentDescription = "ProxyStore Agent",
-                tint = Primary,
-                modifier = Modifier.size(36.dp)
-            )
-        }
+            // ASCII logo/icon
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(TerminalAmber.copy(alpha = 0.2f), RectangleShape)
+                    .border(2.dp, TerminalAmber, RectangleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Security,
+                    contentDescription = "ProxyStore",
+                    tint = TerminalAmber,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
 
-        // App Title
-        Text(
-            text = "ProxyStore Agent",
-            style = MaterialTheme.typography.headlineLarge,
-            color = TextPrimary
-        )
+            Text(
+                text = "█ PROXYSTORE █",
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black
+                ),
+                color = TerminalAmber
+            )
+
+            BrutalComment("Android Proxy Agent")
+        }
     }
 }
 
+/**
+ * Token Input Section - Brutal styled input for pairing token
+ */
 @Composable
 fun TokenInputSection(
     token: String,
     onTokenChange: (String) -> Unit,
     enabled: Boolean
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    BrutalCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        // Label
         Text(
-            text = "ENTER PAIRING TOKEN",
-            style = MaterialTheme.typography.labelMedium,
-            color = TextTertiary,
-            modifier = Modifier.padding(start = 4.dp)
+            text = "PAIRING_TOKEN",
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = FontWeight.Black
+            ),
+            color = TextTertiary
         )
 
-        // Input Field
-        OutlinedTextField(
+        Spacer(modifier = Modifier.height(ProxySpacing.sm))
+
+        BrutalTextField(
             value = token,
-            onValueChange = onTokenChange,
+            onValueChange = { newValue ->
+                onTokenChange(newValue.filter { it.isLetterOrDigit() })
+            },
+            placeholder = "ABC123",
             enabled = enabled,
-            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
             textStyle = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 0.1.sp
-            ),
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Characters,
-                keyboardType = KeyboardType.Ascii
-            ),
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = SurfaceDarker,
-                focusedContainerColor = SurfaceDarker,
-                disabledContainerColor = SurfaceDarker,
-                unfocusedBorderColor = BorderDark,
-                focusedBorderColor = Primary,
-                disabledBorderColor = BorderDark,
-                unfocusedTextColor = TextPrimary,
-                focusedTextColor = TextPrimary,
-                disabledTextColor = TextSecondary,
-                cursorColor = Primary
-            ),
-            shape = RoundedCornerShape(12.dp),
-            placeholder = {
-                Text(
-                    text = "ABC123",
-                    color = TextTertiary,
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            },
-            singleLine = true
+                letterSpacing = 2.sp,
+                fontSize = 24.sp
+            )
         )
     }
 }
 
-@Composable
-fun StatusIndicator(
-    isOnline: Boolean,
-    isConnecting: Boolean
-) {
-    val statusColor = when {
-        isOnline -> Success
-        isConnecting -> Warning
-        else -> Error
-    }
-    val statusText = when {
-        isOnline -> "ONLINE"
-        isConnecting -> "CONNECTING..."
-        else -> "OFFLINE"
-    }
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // Status indicator dot or spinner
-        if (isConnecting) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(10.dp),
-                strokeWidth = 2.dp,
-                color = statusColor
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(
-                        color = statusColor,
-                        shape = CircleShape
-                    )
-            )
-        }
-
-        // Status text
-        Text(
-            text = statusText,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.05.sp
-            ),
-            color = statusColor
-        )
-    }
-}
-
-@Composable
-fun ConnectButton(
-    isOnline: Boolean,
-    isConnecting: Boolean,
-    enabled: Boolean,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Primary,
-            disabledContainerColor = Color(0xFF334155),
-            contentColor = TextPrimary,
-            disabledContentColor = TextTertiary
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        if (isConnecting) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp,
-                    color = TextPrimary
-                )
-                Text(
-                    text = "Connecting",
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-        } else {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = if (isOnline) Icons.Default.Close else Icons.Default.Power,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = if (isOnline) "Disconnect" else "Connect",
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-        }
-    }
-}
-
+/**
+ * Connection Info Card - Shown while connecting
+ */
 @Composable
 fun ConnectionInfoCard() {
-    Card(
+    BrutalCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = CardBackground
-        ),
-        border = BorderStroke(1.dp, BorderDark)
+        accentColor = TerminalAmber
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(ProxySpacing.md)
         ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                strokeWidth = 2.dp,
-                color = Primary
-            )
+            // Terminal-style loading indicator (no circular spinner)
             Text(
-                text = "Waiting for server response...\nThis may take a few seconds.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary
+                text = "▶",
+                style = MaterialTheme.typography.titleLarge,
+                color = TerminalAmber
             )
+
+            Column {
+                Text(
+                    text = "CONNECTING_TO_SERVER",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = TextPrimary
+                )
+                BrutalComment("Waiting for server response...")
+            }
         }
     }
 }
 
+/**
+ * Credentials Card - Shows device credentials when online
+ */
 @Composable
 fun CredentialsCard(
     context: Context,
     credentials: com.ghzawi.proxystoreagent.service.WelcomePayload
 ) {
-    Card(
+    BrutalCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = CardBackground
-        ),
-        border = BorderStroke(1.dp, BorderDark)
+        accentColor = TerminalGreen
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = "Device Credentials",
-                style = MaterialTheme.typography.headlineSmall,
-                color = TextPrimary
-            )
+        Text(
+            text = "┌─ DEVICE_CREDENTIALS ─┐",
+            style = MaterialTheme.typography.headlineSmall,
+            color = TerminalGreen
+        )
 
-            HorizontalDivider(color = BorderDark, thickness = 1.dp)
+        Spacer(modifier = Modifier.height(ProxySpacing.md))
 
-            CredentialRow(
-                context = context,
-                label = "Device Name",
-                value = credentials.deviceName
-            )
+        BrutalDivider(color = BorderBrutal)
 
-            CredentialRow(
-                context = context,
-                label = "Username",
-                value = credentials.username
-            )
-        }
+        Spacer(modifier = Modifier.height(ProxySpacing.md))
+
+        // Device Name
+        CredentialRow(
+            context = context,
+            label = "DEVICE_NAME",
+            value = credentials.deviceName
+        )
+
+        Spacer(modifier = Modifier.height(ProxySpacing.md))
+
+        // Username
+        CredentialRow(
+            context = context,
+            label = "USERNAME",
+            value = credentials.username
+        )
+
+        Spacer(modifier = Modifier.height(ProxySpacing.sm))
+
+        BrutalComment("Credentials copied to clipboard on tap")
     }
 }
 
+/**
+ * Proxy Activity Card - Shows connection stats
+ */
 @Composable
 fun ProxyActivityCard(
     activeConnections: Int,
     totalBytes: Long
 ) {
-    Card(
+    BrutalCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = CardBackground
-        ),
-        border = BorderStroke(1.dp, BorderDark)
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = "Proxy Activity",
-                style = MaterialTheme.typography.headlineSmall,
-                color = TextPrimary
-            )
-
-            HorizontalDivider(color = BorderDark, thickness = 1.dp)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Active Connections
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = "ACTIVE CONNECTIONS",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextTertiary
-                    )
-                    Text(
-                        text = activeConnections.toString(),
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = Primary
-                    )
-                }
-
-                // Data Transferred
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = "DATA TRANSFERRED",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextTertiary,
-                        textAlign = TextAlign.End
-                    )
-                    Text(
-                        text = formatBytes(totalBytes),
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = Primary,
-                        textAlign = TextAlign.End
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun OffboardButton(onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp),
-        colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = Error
-        ),
-        border = BorderStroke(1.dp, Error),
-        shape = RoundedCornerShape(12.dp)
+        accentColor = TerminalCyan
     ) {
         Text(
-            text = "Offboard Device",
-            style = MaterialTheme.typography.labelLarge
+            text = "> PROXY_ACTIVITY",
+            style = MaterialTheme.typography.headlineSmall,
+            color = TerminalCyan
         )
+
+        Spacer(modifier = Modifier.height(ProxySpacing.md))
+
+        BrutalDivider()
+
+        Spacer(modifier = Modifier.height(ProxySpacing.md))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Active Connections
+            Column(
+                verticalArrangement = Arrangement.spacedBy(ProxySpacing.xs)
+            ) {
+                Text(
+                    text = "CONNECTIONS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextTertiary
+                )
+                Text(
+                    text = activeConnections.toString(),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black
+                    ),
+                    color = TerminalCyan
+                )
+            }
+
+            // Data Transferred
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(ProxySpacing.xs)
+            ) {
+                Text(
+                    text = "DATA_TRANSFERRED",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextTertiary,
+                    textAlign = TextAlign.End
+                )
+                Text(
+                    text = formatBytes(totalBytes),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black
+                    ),
+                    color = TerminalAmber,
+                    textAlign = TextAlign.End
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(ProxySpacing.sm))
+
+        BrutalComment("Real-time proxy statistics")
     }
 }
 
+/**
+ * Credential Row - Single credential with copy button
+ */
 @Composable
 fun CredentialRow(
     context: Context,
@@ -566,7 +464,7 @@ fun CredentialRow(
     ) {
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(ProxySpacing.xs)
         ) {
             Text(
                 text = label.uppercase(),
@@ -575,11 +473,14 @@ fun CredentialRow(
             )
             Text(
                 text = value,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
                 color = TextPrimary
             )
         }
 
+        // Copy button
         IconButton(
             onClick = {
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -590,13 +491,16 @@ fun CredentialRow(
             Icon(
                 imageVector = Icons.Default.ContentCopy,
                 contentDescription = "Copy $label",
-                tint = Primary,
+                tint = TerminalCyan,
                 modifier = Modifier.size(20.dp)
             )
         }
     }
 }
 
+/**
+ * Format bytes to human-readable format
+ */
 fun formatBytes(bytes: Long): String {
     return when {
         bytes < 1024 -> "$bytes B"

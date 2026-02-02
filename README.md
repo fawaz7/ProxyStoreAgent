@@ -41,6 +41,7 @@ An Android application that acts as a residential proxy agent, connecting device
 ## Setup
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/yourusername/ProxyStoreAgent.git
    cd ProxyStoreAgent
@@ -55,6 +56,7 @@ An Android application that acts as a residential proxy agent, connecting device
 ## Configuration
 
 The app connects to the WebSocket server at:
+
 ```
 wss://proxystore.ghzawi.com/ws
 ```
@@ -71,11 +73,13 @@ To change the server URL, modify the `connectWebSocket()` function in [ProxyServ
 ## Building
 
 ### Debug Build
+
 ```bash
 ./gradlew assembleDebug
 ```
 
 ### Release Build
+
 ```bash
 ./gradlew assembleRelease
 ```

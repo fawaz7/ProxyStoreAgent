@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder font family - replace with actual JetBrains Mono fonts -->
+<!-- See FONTS.md for installation instructions -->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Will fall back to system monospace until fonts are added -->
+</font-family>
